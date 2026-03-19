@@ -1,5 +1,7 @@
 # threshold-eval
 
+[![CI](https://github.com/ACIDBURN2501/threshold-eval/actions/workflows/ci.yml/badge.svg)](https://github.com/ACIDBURN2501/threshold-eval/actions/workflows/ci.yml)
+
 Configurable threshold evaluation library for classifying sampled values against validated warning/trip limits with deterministic, policy-driven behavior.
 
 ## Features
