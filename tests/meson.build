@@ -49,6 +49,13 @@ test_helpers = executable(
   include_directories: [public_headers, generated_headers],
 )
 
+test_threshold_ordering = executable(
+  'test_threshold_ordering',
+  files('test_threshold_ordering.c'),
+  dependencies: [threshold_eval_dep],
+  include_directories: [public_headers, generated_headers],
+)
+
 # Individual test cases
 test('threshold_eval_config', test_config)
 test('threshold_eval_validation', test_validation)
@@ -57,3 +64,4 @@ test('threshold_eval_hysteresis', test_hysteresis)
 test('threshold_eval_policies', test_policies)
 test('threshold_eval_boundaries', test_boundaries)
 test('threshold_eval_helpers', test_helpers)
+test('threshold_eval_ordering', test_threshold_ordering)
