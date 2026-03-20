@@ -15,7 +15,7 @@
 #define TEST_ASSERT(expr)                                                      \
         do {                                                                   \
                 if (!(expr)) {                                                 \
-                        fprintf(stderr, "FAIL  %s:%d  %s\n", __FILE__,       \
+                        fprintf(stderr, "FAIL  %s:%d  %s\n", __FILE__,         \
                                 __LINE__, #expr);                              \
                         exit(EXIT_FAILURE);                                    \
                 }                                                              \
@@ -30,7 +30,8 @@
         TEST_ASSERT(strcmp((expected), (actual)) == 0)
 
 #define TEST_ASSERT_FLOAT_WITHIN(delta, expected, actual)                      \
-        TEST_ASSERT(fabsf((float)(actual) - (float)(expected)) <= (float)(delta))
+        TEST_ASSERT(fabsf((float)(actual) - (float)(expected))                 \
+                    <= (float)(delta))
 
 #define TEST_PASS(name) fprintf(stdout, "PASS  %s\n", (name))
 
@@ -328,7 +329,7 @@ TEST_CASE(test_plan_build_negative_epsilon_fails)
         TEST_ASSERT_FALSE(plan.valid);
 }
 
-/* ================ threshold_plan_eval tests ================================ */
+/* ================ threshold_plan_eval tests =============================== */
 
 TEST_CASE(test_eval_null_plan_returns_invalid)
 {
@@ -699,13 +700,13 @@ TEST_CASE(test_eval_hys_prevents_chatter_low)
         TEST_ASSERT_EQUAL(THRESHOLD_SEV_WARN_LOW, sev1);
 
         /* At 21: with 5.0 hysteresis, lo raised to 25 -> still WARN_LOW */
-        threshold_severity_t sev2 = threshold_plan_eval_hys(
-            &plan, 21.0f, 5.0f, THRESHOLD_SEV_WARN_LOW);
+        threshold_severity_t sev2 =
+            threshold_plan_eval_hys(&plan, 21.0f, 5.0f, THRESHOLD_SEV_WARN_LOW);
         TEST_ASSERT_EQUAL(THRESHOLD_SEV_WARN_LOW, sev2);
 
         /* At 26: above adjusted threshold (25) -> clears to OK */
-        threshold_severity_t sev3 = threshold_plan_eval_hys(
-            &plan, 26.0f, 5.0f, THRESHOLD_SEV_WARN_LOW);
+        threshold_severity_t sev3 =
+            threshold_plan_eval_hys(&plan, 26.0f, 5.0f, THRESHOLD_SEV_WARN_LOW);
         TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK, sev3);
 }
 
@@ -804,11 +805,9 @@ TEST_CASE(test_type_name_returns_strings)
         TEST_ASSERT_EQUAL_STRING("LOWER",
                                  threshold_type_name(THRESHOLD_TYPE_LOWER));
         TEST_ASSERT_EQUAL_STRING(
-            "DISCRETE_WARN",
-            threshold_type_name(THRESHOLD_TYPE_DISCRETE_WARN));
+            "DISCRETE_WARN", threshold_type_name(THRESHOLD_TYPE_DISCRETE_WARN));
         TEST_ASSERT_EQUAL_STRING(
-            "DISCRETE_TRIP",
-            threshold_type_name(THRESHOLD_TYPE_DISCRETE_TRIP));
+            "DISCRETE_TRIP", threshold_type_name(THRESHOLD_TYPE_DISCRETE_TRIP));
         TEST_ASSERT_EQUAL_STRING("UNKNOWN",
                                  threshold_type_name((threshold_type_t)99));
 }
@@ -841,8 +840,7 @@ TEST_CASE(test_eval_at_boundary_with_epsilon)
         TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK, threshold_plan_eval(&plan, 80.0f));
 
         /* At 80.5: not above 81, so OK */
-        TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK,
-                          threshold_plan_eval(&plan, 80.5f));
+        TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK, threshold_plan_eval(&plan, 80.5f));
 
         /* At 81.5: above 81, so WARN_HIGH */
         TEST_ASSERT_EQUAL(THRESHOLD_SEV_WARN_HIGH,
@@ -871,13 +869,13 @@ build_range_eps(threshold_plan_t *plan, float eps)
 {
         threshold_config_t cfg;
         threshold_config_init(&cfg);
-        cfg.type    = THRESHOLD_TYPE_RANGE;
-        cfg.lolo    = 10.0f;
-        cfg.lo      = 20.0f;
-        cfg.hi      = 80.0f;
-        cfg.hihi    = 90.0f;
+        cfg.type = THRESHOLD_TYPE_RANGE;
+        cfg.lolo = 10.0f;
+        cfg.lo = 20.0f;
+        cfg.hi = 80.0f;
+        cfg.hihi = 90.0f;
         cfg.epsilon = eps;
-        cfg.policy  = 0;
+        cfg.policy = 0;
         threshold_plan_build(plan, &cfg);
 }
 
@@ -1109,47 +1107,48 @@ TEST_CASE(test_boundary_default_eps_hi_boundary)
         threshold_config_t cfg;
         threshold_plan_t plan;
         threshold_config_init(&cfg);
-        cfg.type   = THRESHOLD_TYPE_UPPER;
-        cfg.hi     = 80.0f;
-        cfg.hihi   = 90.0f;
+        cfg.type = THRESHOLD_TYPE_UPPER;
+        cfg.hi = 80.0f;
+        cfg.hihi = 90.0f;
         cfg.policy = 0;
         threshold_plan_build(&plan, &cfg);
 
         TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK, threshold_plan_eval(&plan, 80.0f));
-        TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK,
-                          threshold_plan_eval(&plan,
-                                             80.0f + THRESHOLD_EVAL_EPSILON * 0.5f));
-        TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK,
-                          threshold_plan_eval(&plan,
-                                             80.0f + THRESHOLD_EVAL_EPSILON));
-        TEST_ASSERT_EQUAL(THRESHOLD_SEV_WARN_HIGH,
-                          threshold_plan_eval(&plan,
-                                             80.0f + THRESHOLD_EVAL_EPSILON * 2.0f));
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_OK,
+            threshold_plan_eval(&plan, 80.0f + THRESHOLD_EVAL_EPSILON * 0.5f));
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_OK,
+            threshold_plan_eval(&plan, 80.0f + THRESHOLD_EVAL_EPSILON));
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_WARN_HIGH,
+            threshold_plan_eval(&plan, 80.0f + THRESHOLD_EVAL_EPSILON * 2.0f));
 }
 
 TEST_CASE(test_boundary_default_eps_lo_boundary)
 {
         /* lo-eps = 20.0 - 0.001 = 19.999.  Values at 20, at 20-eps/2, and at
-         * the edge 20-eps stay OK; a value at 20-eps*2 must trigger WARN_LOW. */
+         * the edge 20-eps stay OK; a value at 20-eps*2 must trigger WARN_LOW.
+         */
         threshold_config_t cfg;
         threshold_plan_t plan;
         threshold_config_init(&cfg);
-        cfg.type   = THRESHOLD_TYPE_LOWER;
-        cfg.lolo   = 10.0f;
-        cfg.lo     = 20.0f;
+        cfg.type = THRESHOLD_TYPE_LOWER;
+        cfg.lolo = 10.0f;
+        cfg.lo = 20.0f;
         cfg.policy = 0;
         threshold_plan_build(&plan, &cfg);
 
         TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK, threshold_plan_eval(&plan, 20.0f));
-        TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK,
-                          threshold_plan_eval(&plan,
-                                             20.0f - THRESHOLD_EVAL_EPSILON * 0.5f));
-        TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK,
-                          threshold_plan_eval(&plan,
-                                             20.0f - THRESHOLD_EVAL_EPSILON));
-        TEST_ASSERT_EQUAL(THRESHOLD_SEV_WARN_LOW,
-                          threshold_plan_eval(&plan,
-                                             20.0f - THRESHOLD_EVAL_EPSILON * 2.0f));
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_OK,
+            threshold_plan_eval(&plan, 20.0f - THRESHOLD_EVAL_EPSILON * 0.5f));
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_OK,
+            threshold_plan_eval(&plan, 20.0f - THRESHOLD_EVAL_EPSILON));
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_WARN_LOW,
+            threshold_plan_eval(&plan, 20.0f - THRESHOLD_EVAL_EPSILON * 2.0f));
 }
 
 /* --- Per-type boundary tests: LOWER type --------------------------------- */
@@ -1160,11 +1159,11 @@ TEST_CASE(test_boundary_lower_type_all_boundaries)
         threshold_config_t cfg;
         threshold_plan_t plan;
         threshold_config_init(&cfg);
-        cfg.type    = THRESHOLD_TYPE_LOWER;
-        cfg.lolo    = 10.0f;
-        cfg.lo      = 20.0f;
+        cfg.type = THRESHOLD_TYPE_LOWER;
+        cfg.lolo = 10.0f;
+        cfg.lo = 20.0f;
         cfg.epsilon = 1.0f;
-        cfg.policy  = 0;
+        cfg.policy = 0;
         threshold_plan_build(&plan, &cfg);
 
         /* LO boundary: dead-band [19, 20] → OK */
@@ -1194,11 +1193,11 @@ TEST_CASE(test_boundary_upper_type_all_boundaries)
         threshold_config_t cfg;
         threshold_plan_t plan;
         threshold_config_init(&cfg);
-        cfg.type    = THRESHOLD_TYPE_UPPER;
-        cfg.hi      = 80.0f;
-        cfg.hihi    = 90.0f;
+        cfg.type = THRESHOLD_TYPE_UPPER;
+        cfg.hi = 80.0f;
+        cfg.hihi = 90.0f;
         cfg.epsilon = 1.0f;
-        cfg.policy  = 0;
+        cfg.policy = 0;
         threshold_plan_build(&plan, &cfg);
 
         /* HI boundary: dead-band [80, 81] → OK */
@@ -1228,10 +1227,10 @@ TEST_CASE(test_boundary_discrete_warn_eps)
         threshold_config_t cfg;
         threshold_plan_t plan;
         threshold_config_init(&cfg);
-        cfg.type    = THRESHOLD_TYPE_DISCRETE_WARN;
-        cfg.hi      = 50.0f;
+        cfg.type = THRESHOLD_TYPE_DISCRETE_WARN;
+        cfg.hi = 50.0f;
         cfg.epsilon = 2.0f;
-        cfg.policy  = 0;
+        cfg.policy = 0;
         threshold_plan_build(&plan, &cfg);
 
         /* At threshold → OK */
@@ -1253,10 +1252,10 @@ TEST_CASE(test_boundary_discrete_trip_eps)
         threshold_config_t cfg;
         threshold_plan_t plan;
         threshold_config_init(&cfg);
-        cfg.type    = THRESHOLD_TYPE_DISCRETE_TRIP;
-        cfg.hihi    = 100.0f;
+        cfg.type = THRESHOLD_TYPE_DISCRETE_TRIP;
+        cfg.hihi = 100.0f;
         cfg.epsilon = 2.0f;
-        cfg.policy  = 0;
+        cfg.policy = 0;
         threshold_plan_build(&plan, &cfg);
 
         /* At threshold → OK */
@@ -1280,13 +1279,13 @@ TEST_CASE(test_boundary_negative_thresholds_eps)
         threshold_config_t cfg;
         threshold_plan_t plan;
         threshold_config_init(&cfg);
-        cfg.type    = THRESHOLD_TYPE_RANGE;
-        cfg.lolo    = -90.0f;
-        cfg.lo      = -80.0f;
-        cfg.hi      = -20.0f;
-        cfg.hihi    = -10.0f;
+        cfg.type = THRESHOLD_TYPE_RANGE;
+        cfg.lolo = -90.0f;
+        cfg.lo = -80.0f;
+        cfg.hi = -20.0f;
+        cfg.hihi = -10.0f;
         cfg.epsilon = 1.0f;
-        cfg.policy  = 0;
+        cfg.policy = 0;
         threshold_plan_build(&plan, &cfg);
 
         /* Middle → OK */
@@ -1336,11 +1335,11 @@ TEST_CASE(test_boundary_hys_eps_high)
         threshold_config_t cfg;
         threshold_plan_t plan;
         threshold_config_init(&cfg);
-        cfg.type    = THRESHOLD_TYPE_UPPER;
-        cfg.hi      = 80.0f;
-        cfg.hihi    = 95.0f;
+        cfg.type = THRESHOLD_TYPE_UPPER;
+        cfg.hi = 80.0f;
+        cfg.hihi = 95.0f;
         cfg.epsilon = 1.0f;
-        cfg.policy  = 0;
+        cfg.policy = 0;
         threshold_plan_build(&plan, &cfg);
 
         /* First crossing: 82 > hi+eps=81 → WARN_HIGH */
@@ -1370,11 +1369,11 @@ TEST_CASE(test_boundary_hys_eps_low)
         threshold_config_t cfg;
         threshold_plan_t plan;
         threshold_config_init(&cfg);
-        cfg.type    = THRESHOLD_TYPE_LOWER;
-        cfg.lolo    = 5.0f;
-        cfg.lo      = 20.0f;
+        cfg.type = THRESHOLD_TYPE_LOWER;
+        cfg.lolo = 5.0f;
+        cfg.lo = 20.0f;
         cfg.epsilon = 1.0f;
-        cfg.policy  = 0;
+        cfg.policy = 0;
         threshold_plan_build(&plan, &cfg);
 
         /* First crossing: 18 < lo-eps=19 → WARN_LOW */
@@ -1384,14 +1383,91 @@ TEST_CASE(test_boundary_hys_eps_low)
 
         /* Rises to 21: without hys would clear (21 >= 19), but with hys the
          * effective trigger is 22, so 21 < 22 → stays WARN_LOW */
-        threshold_severity_t s2 = threshold_plan_eval_hys(
-            &plan, 21.0f, 3.0f, THRESHOLD_SEV_WARN_LOW);
+        threshold_severity_t s2 =
+            threshold_plan_eval_hys(&plan, 21.0f, 3.0f, THRESHOLD_SEV_WARN_LOW);
         TEST_ASSERT_EQUAL(THRESHOLD_SEV_WARN_LOW, s2);
 
         /* Rises to 22: at the dead-band edge; 22 < 22 is false → clears OK */
-        threshold_severity_t s3 = threshold_plan_eval_hys(
-            &plan, 22.0f, 3.0f, THRESHOLD_SEV_WARN_LOW);
+        threshold_severity_t s3 =
+            threshold_plan_eval_hys(&plan, 22.0f, 3.0f, THRESHOLD_SEV_WARN_LOW);
         TEST_ASSERT_EQUAL(THRESHOLD_SEV_OK, s3);
+}
+
+/* ================ INT_MIN / INT_MAX boundary tests ======================== */
+
+TEST_CASE(test_boundary_int_min_max_conversion)
+{
+        /* Test that values near -THRESHOLD_EVAL_MAX and +THRESHOLD_EVAL_MAX
+         * don't cause overflow/underflow or incorrect severity classification.
+         * The library casts between float and int internally for validation. */
+        threshold_config_t cfg;
+        threshold_plan_t plan;
+        threshold_config_init(&cfg);
+        cfg.type = THRESHOLD_TYPE_RANGE;
+        cfg.lolo = -THRESHOLD_EVAL_MAX + 1.0f;
+        cfg.lo = -THRESHOLD_EVAL_MAX + 100.0f;
+        cfg.hi = THRESHOLD_EVAL_MAX - 100.0f;
+        cfg.hihi = THRESHOLD_EVAL_MAX - 1.0f;
+        cfg.epsilon = 0.0f;
+        cfg.policy = 0;
+        threshold_plan_build(&plan, &cfg);
+
+        /* Test values at exact limits */
+        TEST_ASSERT_EQUAL(THRESHOLD_SEV_TRIP_LOW,
+                          threshold_plan_eval(&plan, -THRESHOLD_EVAL_MAX));
+        TEST_ASSERT_EQUAL(THRESHOLD_SEV_TRIP_HIGH,
+                          threshold_plan_eval(&plan, THRESHOLD_EVAL_MAX));
+
+        /* Test values just inside range */
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_OK,
+            threshold_plan_eval(&plan, -THRESHOLD_EVAL_MAX + 101.0f));
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_OK,
+            threshold_plan_eval(&plan, THRESHOLD_EVAL_MAX - 101.0f));
+
+        /* Test values just outside range (at thresholds) */
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_TRIP_LOW,
+            threshold_plan_eval(&plan, -THRESHOLD_EVAL_MAX + 0.5f));
+        TEST_ASSERT_EQUAL(
+            THRESHOLD_SEV_TRIP_HIGH,
+            threshold_plan_eval(&plan, THRESHOLD_EVAL_MAX - 0.5f));
+}
+
+/* ================ Repeated evaluation consistency tests =================== */
+
+TEST_CASE(test_eval_repeated_consistency)
+{
+        /* Verify that repeated evaluations of the same value with the same
+         * plan produce identical results. This tests that the library is
+         * truly stateless and deterministic. */
+        threshold_config_t cfg;
+        threshold_plan_t plan;
+        threshold_config_init(&cfg);
+        cfg.type = THRESHOLD_TYPE_RANGE;
+        cfg.lolo = 10.0f;
+        cfg.lo = 20.0f;
+        cfg.hi = 80.0f;
+        cfg.hihi = 90.0f;
+        cfg.policy = 0;
+        threshold_plan_build(&plan, &cfg);
+
+        /* Test values across all severity ranges */
+        float test_values[] = {5.0f, 15.0f, 50.0f, 85.0f, 95.0f};
+        size_t num_values = sizeof(test_values) / sizeof(test_values[0]);
+
+        for (size_t i = 0; i < num_values; i++) {
+                threshold_severity_t first_result =
+                    threshold_plan_eval(&plan, test_values[i]);
+
+                /* Evaluate 1000 times and assert all results match */
+                for (int j = 0; j < 1000; j++) {
+                        threshold_severity_t result =
+                            threshold_plan_eval(&plan, test_values[i]);
+                        TEST_ASSERT_EQUAL(first_result, result);
+                }
+        }
 }
 
 /* ================ Main ==================================================== */
@@ -1525,7 +1601,8 @@ main(void)
                  "test_boundary_lo_inside_deadband");
         run_test(test_boundary_lo_at_deadband_edge,
                  "test_boundary_lo_at_deadband_edge");
-        run_test(test_boundary_lo_past_deadband, "test_boundary_lo_past_deadband");
+        run_test(test_boundary_lo_past_deadband,
+                 "test_boundary_lo_past_deadband");
         run_test(test_boundary_lolo_exact_at_threshold,
                  "test_boundary_lolo_exact_at_threshold");
         run_test(test_boundary_lolo_inside_deadband,
@@ -1566,6 +1643,14 @@ main(void)
                  "test_boundary_negative_thresholds_eps");
         run_test(test_boundary_hys_eps_high, "test_boundary_hys_eps_high");
         run_test(test_boundary_hys_eps_low, "test_boundary_hys_eps_low");
+
+        /* INT_MIN / INT_MAX boundary tests */
+        run_test(test_boundary_int_min_max_conversion,
+                 "test_boundary_int_min_max_conversion");
+
+        /* Repeated evaluation consistency tests */
+        run_test(test_eval_repeated_consistency,
+                 "test_eval_repeated_consistency");
 
         fprintf(stdout, "\n=== All tests passed ===\n\n");
         return EXIT_SUCCESS;
